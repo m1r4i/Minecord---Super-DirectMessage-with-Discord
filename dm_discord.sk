@@ -1,0 +1,99 @@
+options:
+	bot: "BOT TOKEN HERE"
+on load:
+	if {@bot} is not "BOT TOKEN HERE":
+		login to {@bot} with name "e"
+	else:
+		broadcast "&cPlease set your bot token"
+
+command /discord [<text>] <offline player> <text>:
+	trigger:
+		if arg-1 is "link":
+			set {_e} to random 8 char string from charset `a-zA-Z0-9`
+			set {code::%{_e}%} to player's uuid
+			set {code2::%{_e}%} to player
+			message "Your code to link is %{_e}%"
+		if arg-1 is "tell":
+			message "&aPlease use &b/tell"
+
+command /settell:
+	trigger:
+		open chest with 1 rows named "&4&l/tell Settings" to player
+		format slot 1 of player with diamond named "&bsend messages only in minecraft" with lore "When use /tell, it will be sent message only in Minecraft" to run [make player execute command "def minecraft"]
+		format slot 3 of player with emerald named "&bsend messages only in discord" with lore "When use /tell, it will be sent message only in Discord (if the other party is registered)" to run [make player execute command "def discord"]
+		format slot 5 of player with golden ingot named "&asend messages in minecraft and Discord" with lore "When use /tell, it will be sent message in Discord (if the other party is registered) and Minecraft." to run [make player execute command "def all"]
+		format slot 7 of player with redstone named "&cDisable &b/tell" with lore "Disable /tell" to run [make player execute command "def no"]
+command /def [<text>]:
+	trigger:
+		if arg-1 is "all":
+			set {send.discord.%player's uuid%} to true
+			set {send.minecraft.%player's uuid%} to true
+			message "&aWhen use /tell, it will be sent message in Discord (if the other party is registered) and Minecraft."
+			delete {no.%player's uuid%}
+		else if arg-1 is "discord":
+			delete {send.minecraft.%player's uuid%}
+			set {send.discord.%player's uuid%} to true
+			message "&aWhen use /tell, it will be sent message only in Discord (if the other party is registered)"
+			delete {no.%player's uuid%}
+		else if arg-1 is "minecraft":
+			delete {send.discord.%player's uuid%}
+			set {send.minecraft.%player's uuid%} to true
+			message "&aWhen use /tell, it will be sent message only in Minecraft"
+			delete {no.%player's uuid%}
+		else if arg-1 is "no":
+			delete {send.discord.%player's uuid%}
+			delete {send.minecraft.%player's uuid%}
+			set {no.%player's uuid%} to true
+			message "&b/tell &cDisabled"
+
+		else:
+			message "&cInternal Error"
+			
+command /tell [<offline player>] [<text>]:
+	trigger:
+		if arg-1 is not set:
+			message "&cType Player name"
+			stop
+		if arg-2 is not set:
+			message "&cType messages"
+			stop
+		if {no.%player's uuid%} is set:
+			message "&cYou are currently disabling &b/tell"
+			stop
+		if {last.%arg-1's uuid%} is arg-2:
+			message "&cInternal Error"
+		else:
+			if {send.minecraft.%player's uuid%} is set:
+				if {no.%arg-1's uuid%} is set:
+					message "&cCould not send message because %arg-1% is not online or &b/tell &cis invalidated"
+					stop
+				else if arg-1 is online:
+					send "&aFrom&e:&a%player% &b%arg-2%" to arg-1
+					send "&aTo&e:&a%arg-1% &b%arg-2%" to player
+				else:
+					message "&cCould not send message because %arg-1% is not linked with Discord or &b/tell &cis invalidated"
+			if {send.discord.%player's uuid%} is set:
+				if {no.%arg-1's uuid%} is set:
+					message "&cCould not send message because %arg-1% is not linked with Discord or &b/tell &cis invalidated"
+					stop
+				else if {discord.%arg-1's uuid%} is set:
+					if arg-2 is set:
+						if arg-2 is {last.%player's uuid%}:
+							message "&cInternalError"
+							send "&a[Minecraft] %player% [%arg-2%] => [Discord] %arg-1%(%{discord.%arg-1's uuid%}%) (CANCELED)" to console
+						else:
+							set {last.%player's uuid%} to arg-2
+							create embed:
+								set the title of embed to title with text "%arg-2%"
+								set the description of embed to "Direct Message from Minelife"
+								set the author info of the embed to author named "%player%" with no url and icon "https://images-fe.ssl-images-amazon.com/images/I/512dVKB22QL.png"
+								set the colour of the embed to Cyan
+								set the thumbnail of embed to "https://minotar.net/bust/%player%/95.png"
+								set the footer of embed to footer with text "%player%" and icon "https://images-fe.ssl-images-amazon.com/images/I/512dVKB22QL.png"
+								set the timestamp of embed to now
+							send the last created embed to user with id {discord.%arg-1's uuid%} with e
+							send "&a[Minecraft] %player% [%arg-2%] => [Discord] %arg-1%(%{discord.%arg-1's uuid%}%)" to console
+					else:
+						message "&cError: message isn't set"
+				else:
+					message "&cCould not send message because %arg-1% is not linked with Discord or &b/tell &cis invalidated"
