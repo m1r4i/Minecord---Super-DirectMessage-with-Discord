@@ -23,7 +23,7 @@ discord command link [<text>]:
             delete {code::%arg-1%}
             delete {code2::%arg-1%}
             send "Received" to console
-command /discord [<text>] <offline player> <text>:
+command /discord [<text>]:
 	trigger:
 		if arg-1 is "link":
 			set {_e} to random 8 char string from charset `a-zA-Z0-9`
