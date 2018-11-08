@@ -5,7 +5,24 @@ on load:
 		login to {@bot} with name "e"
 	else:
 		broadcast "&cPlease set your bot token"
-
+discord command link [<text>]:
+    trigger:
+        send "Received" to console
+        if arg 1 is not set:
+            reply with "Please input your verification code, if you do not have one type /link ingame."
+        else if {code::%arg 1%} is not set:
+            reply with "Please type /link ingame to get your verification code"
+        else if {code::%arg 1%} is set:
+            set {_it} to {code::%arg-1%}
+            set {discord::%id of event-member%::player} to {code::%arg-1%}
+            set {discord::%id of event-member%} to id of event-member
+            set {discord.%{code::%arg-1%}%} to id of event-user
+            set {discordid.%event-user%} to {code::%arg-1%}
+            reply with "Your minecraft account: %{code2::%arg-1%}%(%{code::%arg-1%}%) has been linked to your Discord account!"
+            send "&a%name of event-user%(%id of event-user%) has been linked to your minecraft account!" to {code2::%arg-1%}
+            delete {code::%arg-1%}
+            delete {code2::%arg-1%}
+            send "Received" to console
 command /discord [<text>] <offline player> <text>:
 	trigger:
 		if arg-1 is "link":
@@ -60,6 +77,9 @@ command /tell [<offline player>] [<text>]:
 		if {no.%player's uuid%} is set:
 			message "&cYou are currently disabling &b/tell"
 			stop
+		if {blocking.%arg-1's uuid%.%player's uuid%} is set:
+			message "&cCould not send message because %arg-1% is not online or &b/tell &cis invalidated"
+			stop
 		if {last.%arg-1's uuid%} is arg-2:
 			message "&cInternal Error"
 		else:
@@ -97,3 +117,38 @@ command /tell [<offline player>] [<text>]:
 						message "&cError: message isn't set"
 				else:
 					message "&cCould not send message because %arg-1% is not linked with Discord or &b/tell &cis invalidated"
+command /ignore [<offline player>]:
+	trigger:
+		if arg-1 is set:
+			if {blocking.%player's uuid%.%arg-1's uuid%} is not set:
+				set {blocking.%player's uuid%.%arg-1's uuid%} to arg-1's uuid
+				message "&e%arg-1%&a Added to your blocklist"
+			else:
+				delete {blocking.%player's uuid%.%arg-1's uuid%}
+				message "&e%arg-1% &aRemove from your blocklist"
+		else:
+			message "&cPlease enter the IGN"
+discord command tell [<player>] [<text>]:
+	trigger:
+		set {_ini} to {discordid.%event-user%}
+		send "Sent" to console
+		if arg-2 is not set:
+			reply with "&cPlease Type messages"
+			stop
+		if {no.%arg-1's uuid%} is set:
+			reply with "&c%arg-1% is currently disabling &b/tell"
+			stop
+		if {blocking.%arg-1's uuid%.%{_ini}%} is set:
+			reply with "&cCould not send message because %arg-1% is not online or &b/tell &cis invalidated"
+			stop
+		if arg 1 is not set:
+			reply with "Please type online player"
+		else:
+			if {lasts.%id of event-user%} is arg-2:
+				reply with "InternalError"
+				send "&a[Discord] %event-user% [%event-message%] => [Minecraft] %arg-1% (CANCELED)" to console
+
+			else:
+				send "&a[Discord] %event-user% [%event-message%] => [Minecraft] %arg-1%" to console
+				set {lasts.%id of event-user%} to arg-2
+				send "&aFrom: &e%event-user%&e:&b %arg-2% " to arg-1
